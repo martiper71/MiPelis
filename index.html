@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MisPelis</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="apple-touch-icon" href="icono.png">
+    <link rel="icon" type="image/png" href="icono.png">
+    <link rel="shortcut icon" href="icono.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Pantalla de Inicio (Login / Registro / Reset) -->
+    <div id="loginOverlay">
+        <!-- Pantalla 1: LOGIN -->
+        <div id="cardLogin" class="auth-card">
+            <h2>Identifícate</h2>
+            <div class="login-field">
+                <input type="email" id="emailInput" placeholder="Tu Email">
+            </div>
+            <div class="login-field">
+                <input type="password" id="passInput" placeholder="Tu Contraseña">
+            </div>
+            <button class="btn-entrar" id="btnLogin" onclick="login()">Entrar</button>
+            <div id="loginLoading" class="login-loading hidden">
+                <div class="spinner"></div>
+                <span>Verificando credenciales...</span>
+            </div>
+            <div class="login-links">
+                <p>¿No tienes cuenta? <a href="javascript:void(0)"
+                        onclick="mostrarPantalla('cardRegistro')">Regístrate</a></p>
+                <p><a href="javascript:void(0)" onclick="mostrarPantalla('cardReset')">¿Olvidaste tu contraseña?</a></p>
+            </div>
+        </div>
+
+        <!-- Pantalla 2: REGISTRO -->
+        <div id="cardRegistro" class="auth-card hidden">
+            <h2>Regístrate</h2>
+            <div class="login-field">
+                <input type="email" id="regEmail" placeholder="Tu Email">
+            </div>
+            <div class="login-field">
+                <input type="password" id="regPass" placeholder="Tu Contraseña">
+            </div>
+            <div class="login-field">
+                <input type="password" id="regPassConfirm" placeholder="Repite Contraseña">
+            </div>
+            <button class="btn-entrar" id="btnRegistro" onclick="registrarUsuario()">Crear cuenta</button>
+            <div id="regLoading" class="login-loading hidden">
+                <div class="spinner"></div>
+                <span>Creando tu espacio...</span>
+            </div>
+            <div class="login-links">
+                <p>¿Ya tienes cuenta? <a href="javascript:void(0)" onclick="mostrarPantalla('cardLogin')">Inicia
+                        sesión</a></p>
+            </div>
+        </div>
+
+        <!-- Pantalla 3: RECOBRAR CONTRASEÑA -->
+        <div id="cardReset" class="auth-card hidden">
+            <h2>Recuperar</h2>
+            <p style="color: #64748b; margin-bottom: 20px;">Te enviaremos un email para restablecer tu acceso.</p>
+            <div class="login-field">
+                <input type="email" id="resetEmail" placeholder="Tu Email">
+            </div>
+            <button class="btn-entrar" onclick="solicitarReseteo()">Enviar enlace</button>
+            <div class="login-links">
+                <p><a href="javascript:void(0)" onclick="mostrarPantalla('cardLogin')">Volver al inicio</a></p>
+            </div>
+        </div>
+    </div>
+
+
+    <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Cerrar sesión
+    </button>
+
+
+    <h1>🎬 MisPelis</h1>
+
+    <!-- Sección de Estadísticas -->
+    <div id="statsContainer" class="stats-container hidden">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-value" id="statPendientes">0</span>
+                <span class="stat-label">Pendientes</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statEnCasa">0</span>
+                <span class="stat-label">En casa</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statEnCine">0</span>
+                <span class="stat-label">En el cine</span>
+            </div>
+            <div class="stat-item" title="Tiempo total viendo películas">
+                <span class="stat-value" id="statTiempo">0h</span>
+                <span class="stat-label">Tiempo</span>
+            </div>
+        </div>
+        <div id="statsMessage" class="stats-message"></div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Buscar o añadir una película">
+        <button onclick="buscarPeliculas()">Buscar</button>
+    </div>
+
+    <div id="searchResultsSection" class="hidden">
+        <h2 class="section-title">🔍 Resultados de búsqueda</h2>
+        <div id="results" class="results-grid" style="margin-bottom: 50px;"></div>
+    </div>
+
+    <div id="coleccionSecciones">
+        <div id="sectionPendiente" class="hidden">
+            <h2 class="section-title pendiente">⏳ Pendientes</h2>
+            <div id="gridPendiente" class="results-grid"></div>
+        </div>
+
+        <div id="sectionCasa" class="hidden">
+            <h2 class="section-title casa">🏠 En casa</h2>
+            <div id="gridCasa" class="results-grid"></div>
+        </div>
+
+        <div id="sectionCine" class="hidden">
+            <h2 class="section-title cine">📽️ En el cine</h2>
+            <div id="gridCine" class="results-grid"></div>
+        </div>
+    </div>
+
+    <!-- Vista de Detalle -->
+    <div id="detailView" class="detail-view">
+        <div class="detail-content-container">
+            <button class="back-btn" onclick="cerrarDetalle()" title="Cerrar">✕</button>
+            <div id="detailBody" class="detail-content">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Película Finalizada -->
+    <div id="finishModal">
+        <div class="finish-card">
+            <h2>🏆 ¡Película Vista!</h2>
+            <p>¿Qué te ha parecido? Puntúala y añade tus notas finales.</p>
+
+            <div class="stars-container" id="starsContainer">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+
+            <textarea class="notes-area" id="finishNotes"
+                placeholder="Añade tus comentarios sobre la película..."></textarea>
+
+            <button class="btn-entrar btn-finish-save" onclick="guardarFinalizacion()">Guardar y finalizar</button>
+            <button class="btn-secundario" style="width: 100%;" onclick="cerrarFinishModal()">Cerrar sin
+                guardar</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.1/pocketbase.umd.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
