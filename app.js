@@ -202,6 +202,9 @@ async function cargarMisPeliculas() {
             sort: '-created',
         });
 
+        // Asegurar orden descendente por fecha de creación (más reciente primero)
+        records.sort((a, b) => new Date(b.created) - new Date(a.created));
+
         if (records.length === 0) {
             document.getElementById('statsContainer').classList.add('hidden');
             return;
