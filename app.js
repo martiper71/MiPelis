@@ -199,7 +199,7 @@ async function cargarMisPeliculas() {
     try {
         const records = await pb.collection(window.CONFIG.COLLECTION_NAME).getFullList({
             filter: `user = "${pb.authStore.model.id}"`,
-            sort: '-updated',
+            sort: '-created',
         });
 
         if (records.length === 0) {
