@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 
 <body>
@@ -111,30 +111,79 @@
         <div id="statsMessage" class="stats-message"></div>
     </div>
 
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Buscar o añadir una película">
-        <button onclick="buscarPeliculas()">Buscar</button>
+    <!-- Barra de Pestañas Superiores -->
+    <div id="tabsNavContainer" class="tabs-nav-container">
+        <div class="tabs-nav" role="tablist">
+            <button class="tab-btn active" data-tab="pendiente" id="tabBtnPendiente" onclick="cambiarPestaña('pendiente')">
+                <span class="tab-text">Pendientes</span>
+                <span class="tab-badge" id="badgePendiente">0</span>
+            </button>
+            <button class="tab-btn" data-tab="casa" id="tabBtnCasa" onclick="cambiarPestaña('casa')">
+                <span class="tab-text">En casa</span>
+                <span class="tab-badge" id="badgeCasa">0</span>
+            </button>
+            <button class="tab-btn" data-tab="cine" id="tabBtnCine" onclick="cambiarPestaña('cine')">
+                <span class="tab-text">En el cine</span>
+                <span class="tab-badge" id="badgeCine">0</span>
+            </button>
+            <button class="tab-btn" data-tab="explorar" id="tabBtnExplorar" onclick="cambiarPestaña('explorar')">
+                <span class="tab-text">Explorar</span>
+            </button>
+        </div>
     </div>
 
-    <div id="searchResultsSection" class="hidden">
-        <h2 class="section-title">🔍 Resultados de búsqueda</h2>
-        <div id="results" class="results-grid" style="margin-bottom: 50px;"></div>
-    </div>
-
+    <!-- Contenido de Pestañas -->
     <div id="coleccionSecciones">
-        <div id="sectionPendiente" class="hidden">
-            <h2 class="section-title pendiente">⏳ Pendientes</h2>
+        <!-- 1. Pestaña PENDIENTES -->
+        <div id="tabContentPendiente" class="tab-content">
             <div id="gridPendiente" class="results-grid"></div>
+            <div id="emptyPendiente" class="empty-state hidden">
+                <span class="empty-icon">🍿</span>
+                <h3>No tienes películas pendientes</h3>
+                <p>Ve a la pestaña <strong>Explorar</strong> para buscar películas y añadirlas a tu lista.</p>
+                <button class="btn-entrar btn-empty-action" onclick="cambiarPestaña('explorar')">🔍 Buscar películas</button>
+            </div>
         </div>
 
-        <div id="sectionCasa" class="hidden">
-            <h2 class="section-title casa">🏠 En casa</h2>
+        <!-- 2. Pestaña EN CASA -->
+        <div id="tabContentCasa" class="tab-content hidden">
             <div id="gridCasa" class="results-grid"></div>
+            <div id="emptyCasa" class="empty-state hidden">
+                <span class="empty-icon">🛋️</span>
+                <h3>No tienes películas vistas en casa</h3>
+                <p>Cuando veas una película desde casa, márcala como "En casa" para llevar tu registro.</p>
+            </div>
         </div>
 
-        <div id="sectionCine" class="hidden">
-            <h2 class="section-title cine">📽️ En el cine</h2>
+        <!-- 3. Pestaña EN EL CINE -->
+        <div id="tabContentCine" class="tab-content hidden">
             <div id="gridCine" class="results-grid"></div>
+            <div id="emptyCine" class="empty-state hidden">
+                <span class="empty-icon">🎟️</span>
+                <h3>No tienes películas vistas en el cine</h3>
+                <p>¡Disfruta de la gran pantalla y añade aquí tus estrenos de cine!</p>
+            </div>
+        </div>
+
+        <!-- 4. Pestaña EXPLORAR -->
+        <div id="tabContentExplorar" class="tab-content hidden">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Buscar título o ID de TMDB...">
+                <button onclick="buscarPeliculas()">Buscar</button>
+            </div>
+
+            <div id="searchResultsSection" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="section-title" style="margin: 0;">🔍 Resultados de búsqueda</h2>
+                    <button class="btn-clear-search" onclick="limpiarBusqueda()">✕ Limpiar</button>
+                </div>
+                <div id="results" class="results-grid" style="margin-bottom: 50px;"></div>
+            </div>
+
+            <div id="tendenciasSection">
+                <h2 class="section-title" style="border-color: #6366f1; color: #6366f1;">🔥 Populares esta semana</h2>
+                <div id="gridPopulares" class="results-grid"></div>
+            </div>
         </div>
     </div>
 
@@ -173,7 +222,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.1/pocketbase.umd.js"></script>
     <script src="config.js"></script>
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=4"></script>
 
 </body>
 

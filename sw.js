@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mis-pelis-v2';
+const CACHE_NAME = 'mis-pelis-v4';
 const ASSETS = [
     './',
     './index.html',

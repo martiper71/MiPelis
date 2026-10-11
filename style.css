@@ -465,7 +465,7 @@ button:active {
 /* La rejilla de resultados */
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
     gap: 20px;
 }
 
@@ -490,8 +490,9 @@ button:active {
 
 .card img {
     width: 100%;
-    height: 220px;
-    object-fit: cover;
+    height: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: contain;
     background: #f1f5f9;
     transition: transform 0.5s;
     border-radius: 20px 20px 0 0;
@@ -981,4 +982,220 @@ button:active {
     font-style: italic;
     color: #cbd5e1;
     font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   ESTILOS DE PESTAÑAS SUPERIORES Y VISTAS
+   ========================================================================== */
+
+.tabs-nav-container {
+    margin-bottom: 30px;
+    background: rgba(248, 250, 252, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 6px;
+    border-radius: 18px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.tabs-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.tabs-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.tab-btn.active {
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12);
+    font-weight: 700;
+}
+
+.tab-btn.active[data-tab="pendiente"] {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+.tab-btn.active[data-tab="casa"] {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.tab-btn.active[data-tab="cine"] {
+    background: #e0e7ff;
+    color: #6366f1;
+}
+
+.tab-btn.active[data-tab="explorar"] {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.tab-badge {
+    min-width: 22px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #64748b;
+    transition: all 0.25s;
+    line-height: 1.4;
+}
+
+.tab-btn.active[data-tab="pendiente"] .tab-badge {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+.tab-btn.active[data-tab="casa"] .tab-badge {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.tab-btn.active[data-tab="cine"] .tab-badge {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    border: 1.5px dashed #cbd5e1;
+    margin: 20px 0;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.empty-icon {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.empty-state h3 {
+    font-size: 1.3rem;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.btn-empty-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px !important;
+    width: auto !important;
+    padding: 10px 22px !important;
+    border-radius: 12px !important;
+    cursor: pointer;
+}
+
+.btn-clear-search {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-clear-search:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fecaca;
+}
+
+/* Mantener las cuatro pestañas legibles en pantallas estrechas */
+@media (max-width: 640px) {
+    body {
+        padding: 15px 10px;
+    }
+
+    .tabs-nav-container {
+        padding: 4px;
+        margin-bottom: 20px;
+        border-radius: 16px;
+    }
+
+    .tabs-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 3px;
+        overflow: visible;
+    }
+
+    .tab-btn {
+        padding: 8px 2px;
+        gap: 5px;
+        min-width: 0;
+        border-radius: 12px;
+    }
+
+    .tab-text {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        line-height: 1.2;
+    }
+
+    .tab-badge {
+        font-size: 0.68rem;
+        padding: 1px 5px;
+        min-width: 14px;
+        text-align: center;
+        line-height: 1.2;
+    }
+
 }

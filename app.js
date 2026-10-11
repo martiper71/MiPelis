@@ -16,6 +16,7 @@ let peliculaActual = null; // Estado de la película abierta
 let syncQueue = Promise.resolve(); // Cola de promesas secuencial
 let pendingRecords = 0; // Contador de peticiones activas
 let ratingSeleccionado = 0;
+let pestañaActiva = 'pendiente'; // Pestaña activa inicial
 
 function initStars() {
     const stars = document.querySelectorAll('.star');
@@ -35,13 +36,18 @@ function updateAuthUI() {
     // Solo controlamos la pantalla de login
     document.getElementById('loginOverlay').className = isLogged ? 'hidden' : '';
 
+    const tabsNav = document.getElementById('tabsNavContainer');
+    const coleccion = document.getElementById('coleccionSecciones');
+
     if (isLogged) {
+        if (tabsNav) tabsNav.classList.remove('hidden');
+        if (coleccion) coleccion.classList.remove('hidden');
         cargarMisPeliculas();
     } else {
-        // Ocultar todas las secciones si no hay login
-        document.getElementById('sectionPendiente').classList.add('hidden');
-        document.getElementById('sectionCasa').classList.add('hidden');
-        document.getElementById('sectionCine').classList.add('hidden');
+        if (tabsNav) tabsNav.classList.add('hidden');
+        if (coleccion) coleccion.classList.add('hidden');
+        const stats = document.getElementById('statsContainer');
+        if (stats) stats.classList.add('hidden');
     }
 }
 
@@ -181,6 +187,94 @@ function mostrarAvisoGuardado(texto) {
     }
 }
 
+function cambiarPestaña(tabName) {
+    pestañaActiva = tabName;
+
+    // Actualizar botones de pestaña
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+    });
+
+    // Actualizar paneles de contenido
+    const tabs = ['pendiente', 'casa', 'cine', 'explorar'];
+    tabs.forEach(t => {
+        const pane = document.getElementById(`tabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (pane) {
+            pane.classList.toggle('hidden', t !== tabName);
+        }
+    });
+
+    // Si entra en 'explorar', cargar sugerencias populares si no se han cargado aún
+    if (tabName === 'explorar') {
+        cargarTendenciasTMDB();
+    }
+}
+
+function limpiarBusqueda() {
+    document.getElementById('searchInput').value = '';
+    const searchResultsSection = document.getElementById('searchResultsSection');
+    if (searchResultsSection) searchResultsSection.classList.add('hidden');
+    const results = document.getElementById('results');
+    if (results) results.innerHTML = '';
+    const tendenciasSection = document.getElementById('tendenciasSection');
+    if (tendenciasSection) tendenciasSection.classList.remove('hidden');
+}
+
+let tendenciasCargadas = false;
+async function cargarTendenciasTMDB(forzar = false) {
+    const gridPopulares = document.getElementById('gridPopulares');
+    if (!gridPopulares) return;
+    if (tendenciasCargadas && !forzar && gridPopulares.children.length > 0) return;
+
+    try {
+        gridPopulares.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: var(--text-muted); padding: 30px;">Cargando películas populares...</p>';
+        const res = await fetch(`https://api.themoviedb.org/3/trending/movie/week?api_key=${API_KEY}&language=es-ES`);
+        const data = await res.json();
+
+        let idsEnColeccion = new Set();
+        if (pb.authStore.isValid && pb.authStore.model) {
+            try {
+                const misPeliculas = await pb.collection(window.CONFIG.COLLECTION_NAME).getFullList({
+                    filter: `user = "${pb.authStore.model.id}"`,
+                    fields: 'tmdb_id'
+                });
+                idsEnColeccion = new Set(misPeliculas.map(p => String(p.tmdb_id)));
+            } catch (err) {}
+        }
+
+        gridPopulares.innerHTML = '';
+        if (data.results && data.results.length > 0) {
+            data.results.slice(0, 18).forEach(pelicula => {
+                const yaEnLista = idsEnColeccion.has(String(pelicula.id));
+                const poster = pelicula.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${pelicula.poster_path}`
+                    : 'https://via.placeholder.com/500x750?text=No+Image';
+                const year = pelicula.release_date ? pelicula.release_date.split('-')[0] : 'Sin fecha';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => mostrarDetalle(pelicula, yaEnLista);
+
+                card.innerHTML = `
+                    ${yaEnLista ? '<div class="card-tmdb-status tmdb-status-returning" style="background: #6366f1; color: white;">EN TU LISTA</div>' : ''}
+                    <img src="${poster}" alt="${pelicula.title}">
+                    <div class="card-info">
+                        <div class="card-title">${pelicula.title || pelicula.name}</div>
+                        <div class="card-year">${year}</div>
+                    </div>
+                `;
+                gridPopulares.appendChild(card);
+            });
+            tendenciasCargadas = true;
+        } else {
+            gridPopulares.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">No se pudieron cargar sugerencias.</p>';
+        }
+    } catch (e) {
+        console.error("Error al cargar tendencias:", e);
+        gridPopulares.innerHTML = '';
+    }
+}
+
 async function cargarMisPeliculas() {
     if (!pb.authStore.isValid) return;
 
@@ -188,12 +282,9 @@ async function cargarMisPeliculas() {
     const gridCasa = document.getElementById('gridCasa');
     const gridCine = document.getElementById('gridCine');
 
-    // Limpiar y ocultar secciones inicialmente
+    // Limpiar grids
     [gridPendiente, gridCasa, gridCine].forEach(g => {
-        if (g) {
-            g.innerHTML = '';
-            if (g.parentElement) g.parentElement.classList.add('hidden');
-        }
+        if (g) g.innerHTML = '';
     });
 
     try {
@@ -205,8 +296,29 @@ async function cargarMisPeliculas() {
         // Asegurar orden descendente por fecha de creación (más reciente primero)
         records.sort((a, b) => new Date(b.created) - new Date(a.created));
 
+        const countPendiente = records.filter(r => (r.estado || 'Pendiente') === 'Pendiente').length;
+        const countCasa = records.filter(r => r.estado === 'En casa').length;
+        const countCine = records.filter(r => r.estado === 'En el cine').length;
+
+        // Actualizar badges numéricos en las pestañas
+        const bPendiente = document.getElementById('badgePendiente');
+        const bCasa = document.getElementById('badgeCasa');
+        const bCine = document.getElementById('badgeCine');
+        if (bPendiente) bPendiente.innerText = countPendiente;
+        if (bCasa) bCasa.innerText = countCasa;
+        if (bCine) bCine.innerText = countCine;
+
+        // Mostrar / ocultar empty states
+        const ePendiente = document.getElementById('emptyPendiente');
+        const eCasa = document.getElementById('emptyCasa');
+        const eCine = document.getElementById('emptyCine');
+        if (ePendiente) ePendiente.classList.toggle('hidden', countPendiente > 0);
+        if (eCasa) eCasa.classList.toggle('hidden', countCasa > 0);
+        if (eCine) eCine.classList.toggle('hidden', countCine > 0);
+
         if (records.length === 0) {
             document.getElementById('statsContainer').classList.add('hidden');
+            cambiarPestaña(pestañaActiva);
             return;
         }
 
@@ -216,14 +328,12 @@ async function cargarMisPeliculas() {
 
         records.forEach(pelicula => {
             const estado = pelicula.estado || 'Pendiente';
-            // Tiempo invertido (si ya está vista)
             if (estado === 'En casa' || estado === 'En el cine') {
                 totalVistas++;
                 const duracion = pelicula.duracion_media || 120;
                 totalMinutos += duracion;
             }
 
-            // Contar géneros
             if (pelicula.generos) {
                 pelicula.generos.split(', ').forEach(g => {
                     mapaGeneros[g] = (mapaGeneros[g] || 0) + 1;
@@ -251,23 +361,22 @@ async function cargarMisPeliculas() {
                 </div>
             `;
 
-            // Mandar a su grid correspondiente
             if (estado === 'Pendiente') {
                 gridPendiente.appendChild(card);
-                gridPendiente.parentElement.classList.remove('hidden');
             } else if (estado === 'En casa') {
                 gridCasa.appendChild(card);
-                gridCasa.parentElement.classList.remove('hidden');
             } else if (estado === 'En el cine') {
                 gridCine.appendChild(card);
-                gridCine.parentElement.classList.remove('hidden');
             }
         });
 
+        // Asegurar que la pestaña activa seleccionada se muestre
+        cambiarPestaña(pestañaActiva);
+
         // Actualizar Estadísticas
-        document.getElementById('statPendientes').innerText = records.filter(r => (r.estado || 'Pendiente') === 'Pendiente').length;
-        document.getElementById('statEnCasa').innerText = records.filter(r => r.estado === 'En casa').length;
-        document.getElementById('statEnCine').innerText = records.filter(r => r.estado === 'En el cine').length;
+        document.getElementById('statPendientes').innerText = countPendiente;
+        document.getElementById('statEnCasa').innerText = countCasa;
+        document.getElementById('statEnCine').innerText = countCine;
 
         // Formatear Tiempo
         const horasTotales = Math.floor(totalMinutos / 60);
@@ -302,8 +411,6 @@ async function cargarMisPeliculas() {
 let verificandoNovedades = false;
 let updateCheckDone = false;
 
-// La verificación de novedades para películas es más sencilla, solemos buscar si ya se han estrenado o han salido en digital
-// De momento lo dejamos como una función vacía o simplificada
 async function verificarNovedades(peliculas) {
     // Implementar si es necesario
 }
@@ -312,11 +419,13 @@ async function buscarPeliculas() {
     const query = document.getElementById('searchInput').value;
     const resultsDiv = document.getElementById('results');
     const searchResultsSection = document.getElementById('searchResultsSection');
+    const tendenciasSection = document.getElementById('tendenciasSection');
 
     if (!query) return alert("Escribe el título de una película...");
 
     searchResultsSection.classList.remove('hidden');
-    resultsDiv.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Buscando...</p>';
+    if (tendenciasSection) tendenciasSection.classList.add('hidden');
+    resultsDiv.innerHTML = '<p style="text-align:center; grid-column: 1/-1; padding: 30px;">Buscando...</p>';
 
     try {
         const misPeliculas = await pb.collection(window.CONFIG.COLLECTION_NAME).getFullList({
@@ -567,7 +676,9 @@ async function seleccionarPelicula(pelicula) {
         };
 
         await pb.collection(window.CONFIG.COLLECTION_NAME).create(datosParaPB);
+        alert(`¡"${titulo}" añadida a tu lista de Pendientes!`);
         await cerrarDetalle();
+        cargarTendenciasTMDB(true);
     } catch (error) {
         console.error('Error al guardar:', error);
     }
@@ -577,8 +688,6 @@ async function cerrarDetalle() {
     document.getElementById('detailView').style.display = 'none';
     document.body.style.overflow = 'auto';
     peliculaActual = null;
-    document.getElementById('searchResultsSection').classList.add('hidden');
-    document.getElementById('searchInput').value = '';
     await cargarMisPeliculas();
 }
 
