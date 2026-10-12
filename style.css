@@ -93,34 +93,6 @@ h1 {
     color: #6366f1;
 }
 
-.btn-logout {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.8);
-    color: #64748b;
-    padding: 8px 16px;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-    transition: all 0.2s;
-    backdrop-filter: blur(8px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.btn-logout:hover {
-    background: #fee2e2;
-    color: #ef4444;
-    border-color: #fecaca;
-    transform: translateY(-2px);
-}
-
 /* Estilos de Estadísticas */
 .stats-container {
     background: white;

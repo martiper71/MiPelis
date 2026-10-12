@@ -76,36 +76,6 @@ async function login() {
     }
 }
 
-async function logout() {
-    pb.authStore.clear();
-
-    // Limpiar Cachés de la PWA/Navegador para forzar actualización
-    if ('caches' in window) {
-        try {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
-            console.log("[PWA] Caché eliminada satisfactoriamente");
-        } catch (e) {
-            console.error("[PWA] Error al limpiar caché:", e);
-        }
-    }
-
-    // Desvincular Service Workers (si existen) para asegurar carga fresca
-    if ('serviceWorker' in navigator) {
-        try {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) {
-                await registration.unregister();
-            }
-        } catch (e) {
-            console.error("[PWA] Error al desincorporar Service Worker:", e);
-        }
-    }
-
-    // Forzar recarga completa desde el servidor (evitando caché de disco)
-    window.location.reload(true);
-}
-
 // --- GESTIÓN DE PANTALLAS DE AUTENTICACIÓN ---
 function mostrarPantalla(id) {
     // Ocultar todas las tarjetas
@@ -736,7 +706,27 @@ async function guardarFinalizacion() {
     }
 }
 
-updateAuthUI();
+async function restaurarSesion() {
+    const tokenGuardado = pb.authStore.token;
+    const usuarioGuardado = pb.authStore.model;
+
+    if (tokenGuardado && usuarioGuardado) {
+        try {
+            // Renovar el token persistido al volver a abrir la app.
+            await pb.collection('users').authRefresh();
+        } catch (error) {
+            // Si falla por red/servidor, conservar la sesión local aún vigente.
+            if ((!error.status || error.status >= 500) && pb.authStore.token !== tokenGuardado) {
+                pb.authStore.save(tokenGuardado, usuarioGuardado);
+            }
+            console.warn('No se pudo renovar la sesión guardada:', error);
+        }
+    }
+
+    updateAuthUI();
+}
+
+restaurarSesion();
 initStars();
 document.getElementById('searchInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') buscarPeliculas();
